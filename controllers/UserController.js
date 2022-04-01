@@ -24,6 +24,7 @@ exports.createAdmin = async (req, res, next) => {
             message: "Internal error. Please try again."
         })
     }
+    req.body.user_type = "admin"
 
     const addAdmin = await UserService.addUser(req.body);
     if (addAdmin.error) {
@@ -36,6 +37,43 @@ exports.createAdmin = async (req, res, next) => {
     return res.status(200).send({
         error: false,
         message: "Admin profile is created."
+    })
+}
+
+exports.registerUser = async (req, res, next) => {
+    if (!req.body.username || !req.body.password) {
+        return res.status(400).send({
+            type: "UNABLE_TO_PROCESS_DATA",
+            message: "Please provide valid data."
+        })
+    }
+    const getUser = await UserService.getUser({ username: req.body.username });
+
+    if (getUser.exists) {
+        return res.status(409).send({
+            type: "RESOURCE_ALREADY_EXISTS",
+            message: "User account is already exsts."
+        })
+    }
+
+    if (getUser.error) {
+        return res.status(500).send({
+            type: "SERVER_ERROR_OCCURED",
+            message: "Internal error. Please try again."
+        })
+    }
+    req.body.user_type = "user"
+    const addUser = await UserService.addUser(req.body);
+    if (addUser.error) {
+        console.log(addAdmin)
+        return res.status(500).send({
+            type: "SERVER_ERROR_OCCURED",
+            message: "Internal error. Please try again."
+        })
+    }
+    return res.status(200).send({
+        error: false,
+        message: "User profile is created."
     })
 }
 
@@ -75,5 +113,52 @@ exports.login = async (req, res, next) => {
         error: false,
         token,
         user: getUser.user
+    })
+}
+
+exports.updateUser = async (req, res, next) => {
+    if(!req.query.id) {
+        return res.status(400).send({
+            type: "UNABLE_TO_PROCESS_DATA",
+            message: "Please provide valid data."
+        })
+    }
+    const updatedUser = await UserService.updateUserById(req.query.id, req.body);
+    if(updatedUser.error) {
+        return res.status(500).send({
+            type: "SERVER_ERROR_OCCURED",
+            message: "Internal error. Please try again."
+        })
+    }
+    return res.status(200).send({
+        error: false,
+        updatedUser: updatedUser.updatedUser
+    })
+
+}
+
+exports.deleteUser = async (req, res, next) => {
+    if(!req.query.id) {
+        return res.status(400).send({
+            type: "UNABLE_TO_PROCESS_DATA",
+            message: "Please provide valid data."
+        })
+    }
+    const result = await UserService.deleteUser(req.query.id);
+    if(result.error) {
+        return res.status(500).send({
+            type: "SERVER_ERROR_OCCURED",
+            message: "Internal error. Please try again."
+        })
+    }
+    if(!result.deleted) {
+        return res.status(404).send({
+            type: "RESOURCE_NOT_FOUND",
+            message: "Requested user not found."
+        })
+    }
+    return res.status(200).send({
+        error: false,
+        message: "User deleted."
     })
 }

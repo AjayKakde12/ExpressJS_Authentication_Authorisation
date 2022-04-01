@@ -1,4 +1,5 @@
 const User = require("../models/User")
+const jwt = require("jsonwebtoken")
 
 exports.getUser = async (filter) => {
     try {
@@ -15,7 +16,6 @@ exports.getUser = async (filter) => {
 
 exports.addUser = async (userData) => {
     try {
-        userData.user_type = "admin"
         const getAdmin = await User.create(userData);
         if (getAdmin) return { created: true }
 
@@ -27,10 +27,17 @@ exports.addUser = async (userData) => {
     }
 }
 
-exports.updateUserById = async (id, update) => {
+exports.updateUserById = async (id, update = {}) => {
     try {
-        const updatedUser = await User.findByIdAndUpdate(id, update, { new: true }).select("-password -createdAt -updatedAt");
-        if (updatedUser) return { update: true, updatedUser }
+        const updatedUser = await User.findById(id);
+        if(update.password) {
+            updatedUser.password = undefined
+        }
+        updatedUser._doc = {...updatedUser._doc, ...update}
+        await updatedUser.save();
+        updatedUser._doc.password = undefined
+
+        if (updatedUser) return { update: true, updatedUser: updatedUser._doc }
 
     } catch (error) {
         return {
@@ -40,6 +47,19 @@ exports.updateUserById = async (id, update) => {
     }
 }
 
-exports.getJwt = async (data) => {
+exports.deleteUser = async (id) => {
+    try {
+        const deletedUser = await User.findOneAndRemove({_id: id});
+        if(deletedUser == null) {
+            return {deleted: false}
+        }
+        return { deleted: true}
 
+    } catch (error) {
+        return {
+            error: true,
+            message: error.message
+        }
+    }
 }
+

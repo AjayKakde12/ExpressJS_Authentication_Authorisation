@@ -11,6 +11,7 @@ exports.checkAuth = (role) => {
                     mesage: err.mesage
                 })
             }
+
             if(!role.includes(decoder.user_type)) {
                 return res.status(401).send({
                     error: true,
@@ -18,7 +19,7 @@ exports.checkAuth = (role) => {
                     mesage: "User not authorized."
                 })
             }
-            if(decoder.username) {
+            if(decoder.user_id) {
                 next();
             }
         })

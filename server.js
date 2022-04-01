@@ -20,7 +20,7 @@ dotenv.config({
 
 require('./database')
 
-//ROUTES
+
 
 require("./routes/index")(app)
 
